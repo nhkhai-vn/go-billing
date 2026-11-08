@@ -49,7 +49,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - run: npm install -g firebase-tools@15.33.0
+      - run: npm install -g firebase-tools@15.33.0 # zizmor: ignore[adhoc-packages] exact version, emulator for tests only
       - run: make test-emulator JAVA_HOME="$JAVA_HOME"
 
   zizmor:
