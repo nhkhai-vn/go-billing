@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      BILLING_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: tools/go.mod
+          cache-dependency-path: '**/go.sum'
+      - run: make lint
+      - run: make test
+
+  emulator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: tools/go.mod
+          cache-dependency-path: '**/go.sum'
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm install -g firebase-tools@15.33.0
+      - run: make test-emulator JAVA_HOME="$JAVA_HOME"
+
+  zizmor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: zizmorcore/zizmor-action@53290badfa369cb0bf7ad16342cb62c2fa47ac7b # v0.8.0
+        with:
+          advanced-security: false
