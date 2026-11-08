@@ -10,7 +10,7 @@ import (
 func planEnv(t *testing.T, wrap ...func(*billing.Store)) *env {
 	t.Helper()
 	e := setup(t, wrap...)
-	e.provider.products["prod_1"] = &billing.Product{ID: "prod_1", Name: "SuguQ", Active: true, DefaultPriceID: "price_1"}
+	e.provider.products["prod_1"] = &billing.Product{ID: "prod_1", Name: "Pro", Active: true, DefaultPriceID: "price_1"}
 	e.provider.prices["price_1"] = &billing.Price{
 		ID: "price_1", ProductID: "prod_1", Amount: 1000, Currency: "jpy", Interval: "month", IntervalCount: 1, TaxBehavior: "inclusive",
 	}
@@ -24,7 +24,7 @@ func TestDescribePlan_DefaultPriceOfProduct(t *testing.T) {
 		t.Fatalf("DescribePlan: %v", err)
 	}
 	want := billing.Plan{
-		ProductID: "prod_1", PriceID: "price_1", Name: "SuguQ", Amount: 1000, Currency: "jpy", Interval: "month",
+		ProductID: "prod_1", PriceID: "price_1", Name: "Pro", Amount: 1000, Currency: "jpy", Interval: "month",
 		IntervalCount: 1, Quantity: 3, TaxBehavior: "inclusive", TrialDays: 14,
 	}
 	if *plan != want {

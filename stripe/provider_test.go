@@ -104,10 +104,10 @@ func TestFindCustomer_MatchesApp(t *testing.T) {
 	srv, requests := fakeStripe(t, `{"object":"list","url":"/v1/customers","has_more":false,"data":[
 		{"id":"cus_legacy","object":"customer","metadata":{}},
 		{"id":"cus_other","object":"customer","metadata":{"app_id":"other"}},
-		{"id":"cus_queue","object":"customer","metadata":{"app_id":"queue"}}]}`)
-	id, err := providerFor(srv, "sk_test_a").FindCustomer(context.Background(), "u@example.com", "queue")
-	if err != nil || id != "cus_queue" {
-		t.Fatalf("id %q, err %v, want cus_queue", id, err)
+		{"id":"cus_myapp","object":"customer","metadata":{"app_id":"myapp"}}]}`)
+	id, err := providerFor(srv, "sk_test_a").FindCustomer(context.Background(), "u@example.com", "myapp")
+	if err != nil || id != "cus_myapp" {
+		t.Fatalf("id %q, err %v, want cus_myapp", id, err)
 	}
 	if q := requests()[0].query; q.Get("email") != "u@example.com" {
 		t.Errorf("query = %v", q)
@@ -117,7 +117,7 @@ func TestFindCustomer_MatchesApp(t *testing.T) {
 func TestFindCustomer_NoneOfTheApp(t *testing.T) {
 	srv, _ := fakeStripe(t, `{"object":"list","url":"/v1/customers","has_more":false,"data":[
 		{"id":"cus_other","object":"customer","metadata":{"app_id":"other"}}]}`)
-	id, err := providerFor(srv, "sk_test_a").FindCustomer(context.Background(), "u@example.com", "queue")
+	id, err := providerFor(srv, "sk_test_a").FindCustomer(context.Background(), "u@example.com", "myapp")
 	if err != nil || id != "" {
 		t.Errorf("id %q, err %v, want empty and no error", id, err)
 	}
@@ -125,18 +125,18 @@ func TestFindCustomer_NoneOfTheApp(t *testing.T) {
 
 func TestCreateCustomer_StampsApp(t *testing.T) {
 	srv, requests := fakeStripe(t, `{"id":"cus_1","object":"customer"}`)
-	id, err := providerFor(srv, "sk_test_a").CreateCustomer(context.Background(), "u@example.com", "U", "queue")
+	id, err := providerFor(srv, "sk_test_a").CreateCustomer(context.Background(), "u@example.com", "U", "myapp")
 	if err != nil || id != "cus_1" {
 		t.Fatalf("id %q, err %v", id, err)
 	}
-	wantForm(t, requests()[0].form, map[string]string{"email": "u@example.com", "name": "U", "metadata[app_id]": "queue"})
+	wantForm(t, requests()[0].form, map[string]string{"email": "u@example.com", "name": "U", "metadata[app_id]": "myapp"})
 }
 
 func TestCreateCheckout_StampsAppOnSessionAndSubscription(t *testing.T) {
 	srv, requests := fakeStripe(t, `{"id":"cs_1","object":"checkout.session","url":"https://checkout"}`)
 	sess, err := providerFor(srv, "sk_test_a").CreateCheckout(context.Background(), billing.CheckoutParams{
 		CustomerID: "cus_1", PriceID: "price_1", Quantity: 3, SetupPriceID: "price_setup", SuccessURL: "https://ok", CancelURL: "https://no",
-		AppID: "queue", CustomerEmail: "u@example.com", TrialDays: 14, AllowPromotionCodes: true, Locale: "ja",
+		AppID: "myapp", CustomerEmail: "u@example.com", TrialDays: 14, AllowPromotionCodes: true, Locale: "ja",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -152,9 +152,9 @@ func TestCreateCheckout_StampsAppOnSessionAndSubscription(t *testing.T) {
 	wantForm(t, f, map[string]string{
 		"customer":                             "cus_1",
 		"mode":                                 "subscription",
-		"metadata[app_id]":                     "queue",
+		"metadata[app_id]":                     "myapp",
 		"metadata[customer_email]":             "u@example.com",
-		"subscription_data[metadata][app_id]":  "queue",
+		"subscription_data[metadata][app_id]":  "myapp",
 		"subscription_data[trial_period_days]": "14",
 		"line_items[0][price]":                 "price_1",
 		"line_items[0][quantity]":              "3",
@@ -177,7 +177,7 @@ func TestCreateCheckout_StampsAppOnSessionAndSubscription(t *testing.T) {
 func TestCreateCheckout_MeteredPriceHasNoQuantity(t *testing.T) {
 	srv, requests := fakeStripe(t, `{"id":"cs_1","object":"checkout.session"}`)
 	_, err := providerFor(srv, "sk_test_a").CreateCheckout(context.Background(), billing.CheckoutParams{
-		CustomerID: "cus_1", PriceID: "price_1", MeteredPriceID: "price_metered", AppID: "queue",
+		CustomerID: "cus_1", PriceID: "price_1", MeteredPriceID: "price_metered", AppID: "myapp",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -195,8 +195,8 @@ func TestCreateCheckout_MeteredPriceHasNoQuantity(t *testing.T) {
 
 func TestGetCheckout_FillsSubscription(t *testing.T) {
 	srv, requests := fakeStripe(t, `{"id":"cs_1","object":"checkout.session","payment_status":"paid","customer":"cus_1",
-		"metadata":{"app_id":"queue","customer_email":"u@example.com"},
-		"subscription":{"id":"sub_1","object":"subscription","status":"active","metadata":{"app_id":"queue"},
+		"metadata":{"app_id":"myapp","customer_email":"u@example.com"},
+		"subscription":{"id":"sub_1","object":"subscription","status":"active","metadata":{"app_id":"myapp"},
 			"items":{"object":"list","data":[{"id":"si_1","object":"subscription_item","quantity":2,"price":{"id":"price_1","object":"price"}}]}}}`)
 	got, err := providerFor(srv, "sk_test_a").GetCheckout(context.Background(), "cs_1")
 	if err != nil {
@@ -205,10 +205,10 @@ func TestGetCheckout_FillsSubscription(t *testing.T) {
 	if q := requests()[0].query; q.Get("expand[0]") != "subscription" {
 		t.Errorf("query = %v, want expand subscription", q)
 	}
-	if got.ID != "cs_1" || got.AppID != "queue" || got.CustomerEmail != "u@example.com" || got.CustomerID != "cus_1" || !got.Paid || got.SubscriptionID != "sub_1" {
+	if got.ID != "cs_1" || got.AppID != "myapp" || got.CustomerEmail != "u@example.com" || got.CustomerID != "cus_1" || !got.Paid || got.SubscriptionID != "sub_1" {
 		t.Errorf("checkout = %+v", got)
 	}
-	if s := got.Subscription; s == nil || s.ID != "sub_1" || s.Status != "active" || s.PriceID != "price_1" || s.Quantity != 2 || s.AppID != "queue" {
+	if s := got.Subscription; s == nil || s.ID != "sub_1" || s.Status != "active" || s.PriceID != "price_1" || s.Quantity != 2 || s.AppID != "myapp" {
 		t.Errorf("subscription = %+v", got.Subscription)
 	}
 }

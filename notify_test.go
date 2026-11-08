@@ -37,7 +37,7 @@ func TestNotify_CheckoutStarted(t *testing.T) {
 		if n.Title != "🆕 Trial started" || n.Warn {
 			t.Errorf("notification = %+v", n)
 		}
-		wantText(t, n, "App: queue", "Customer: a@example.com", "Status: trialing", "Trial ends: 2023-11-28")
+		wantText(t, n, "App: myapp", "Customer: a@example.com", "Status: trialing", "Trial ends: 2023-11-28")
 	})
 	t.Run("paid", func(t *testing.T) {
 		e := setup(t)
@@ -69,7 +69,7 @@ func TestNotify_PaymentSucceeded(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e := setup(t)
 			e.provider.subs["sub_1"] = subState(billing.StatusActive)
-			if err := e.store.Prices.Upsert(ctx, &billing.Price{ID: "price_1", Nickname: "SuguQ monthly"}); err != nil {
+			if err := e.store.Prices.Upsert(ctx, &billing.Price{ID: "price_1", Nickname: "Pro monthly"}); err != nil {
 				t.Fatal(err)
 			}
 			inv := &billing.Invoice{SubscriptionID: "sub_1", CustomerEmail: "a@example.com", Currency: tc.currency, AmountPaid: tc.amount, Reason: tc.reason}
@@ -80,7 +80,7 @@ func TestNotify_PaymentSucceeded(t *testing.T) {
 			if n.Title != tc.title || n.Warn {
 				t.Errorf("notification = %+v", n)
 			}
-			wantText(t, n, "App: queue", "Customer: a@example.com", "Product: SuguQ monthly", tc.amountTx)
+			wantText(t, n, "App: myapp", "Customer: a@example.com", "Product: Pro monthly", tc.amountTx)
 		})
 	}
 }
@@ -135,7 +135,7 @@ func TestNotify_Cancellation(t *testing.T) {
 		if n.Title != "⚠️ Cancellation scheduled" || !n.Warn {
 			t.Errorf("notification = %+v", n)
 		}
-		wantText(t, n, "App: queue", "Customer: a@example.com", "Ends: 2023-12-14", "Reason: too_expensive — need fewer shops")
+		wantText(t, n, "App: myapp", "Customer: a@example.com", "Ends: 2023-12-14", "Reason: too_expensive — need fewer shops")
 	})
 	t.Run("ended", func(t *testing.T) {
 		e := setup(t)

@@ -35,13 +35,13 @@ func parse(t *testing.T, eventType, object string) *billing.WebhookEvent {
 
 func TestParseWebhook_CheckoutCompleted(t *testing.T) {
 	object := `{"id":"cs_1","object":"checkout.session","payment_status":"paid","customer":"cus_1","subscription":"sub_1",
-		"metadata":{"app_id":"queue","customer_email":"u@example.com"}}`
+		"metadata":{"app_id":"myapp","customer_email":"u@example.com"}}`
 	ev := parse(t, "checkout.session.completed", object)
 
 	if ev.ID != "evt_1" || ev.Type != "checkout.session.completed" || ev.Kind != billing.EventCheckoutCompleted || string(ev.Data) != object {
 		t.Errorf("event = %+v", ev)
 	}
-	want := billing.CheckoutState{ID: "cs_1", AppID: "queue", CustomerEmail: "u@example.com", CustomerID: "cus_1", Paid: true, SubscriptionID: "sub_1"}
+	want := billing.CheckoutState{ID: "cs_1", AppID: "myapp", CustomerEmail: "u@example.com", CustomerID: "cus_1", Paid: true, SubscriptionID: "sub_1"}
 	if ev.Checkout == nil || *ev.Checkout != want {
 		t.Errorf("checkout = %+v, want %+v", ev.Checkout, want)
 	}
@@ -65,7 +65,7 @@ func TestParseWebhook_CheckoutWithoutSubscription(t *testing.T) {
 }
 
 func TestParseWebhook_SubscriptionChanged(t *testing.T) {
-	object := `{"id":"sub_1","object":"subscription","status":"active","cancel_at_period_end":true,"metadata":{"app_id":"queue"},
+	object := `{"id":"sub_1","object":"subscription","status":"active","cancel_at_period_end":true,"metadata":{"app_id":"myapp"},
 		"trial_end":1700000000,"canceled_at":1700000100,
 		"items":{"object":"list","data":[{"id":"si_1","object":"subscription_item","quantity":4,"price":{"id":"price_1","object":"price"},
 			"current_period_start":1700001000,"current_period_end":1702593000}]}}`
@@ -75,7 +75,7 @@ func TestParseWebhook_SubscriptionChanged(t *testing.T) {
 			t.Errorf("%s: kind %q type %q", typ, ev.Kind, ev.Type)
 		}
 		want := billing.SubscriptionState{
-			ID: "sub_1", AppID: "queue", Status: "active", PriceID: "price_1", Quantity: 4, CancelAtPeriodEnd: true,
+			ID: "sub_1", AppID: "myapp", Status: "active", PriceID: "price_1", Quantity: 4, CancelAtPeriodEnd: true,
 			CurrentPeriodStart: time.Unix(1700001000, 0).UTC(), CurrentPeriodEnd: time.Unix(1702593000, 0).UTC(),
 			TrialEnd: time.Unix(1700000000, 0).UTC(), CanceledAt: time.Unix(1700000100, 0).UTC(),
 		}

@@ -11,7 +11,7 @@ import (
 	"github.com/nhkhai-vn/go-billing/memory"
 )
 
-const app = "queue"
+const app = "myapp"
 
 var errDown = errors.New("down")
 

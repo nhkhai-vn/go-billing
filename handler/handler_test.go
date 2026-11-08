@@ -182,7 +182,7 @@ func TestCheckout_ServiceErrorIs500WithoutDetail(t *testing.T) {
 
 func TestPlan_DescribesTheCheckoutOptionsForTheCustomer(t *testing.T) {
 	svc := &stubService{plan: &billing.Plan{
-		Name: "SuguQ", PriceID: "price_1", Amount: 1000, Currency: "jpy", Interval: "month", IntervalCount: 1,
+		Name: "Pro", PriceID: "price_1", Amount: 1000, Currency: "jpy", Interval: "month", IntervalCount: 1,
 		Quantity: 2, TaxBehavior: "inclusive", TrialDays: 14,
 	}}
 	opts := CheckoutOptions{ProductID: "prod_1", TrialDays: 14, SuccessURL: "https://app/ok"}
@@ -199,7 +199,7 @@ func TestPlan_DescribesTheCheckoutOptionsForTheCustomer(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	want := planResponse{Name: "SuguQ", PriceID: "price_1", UnitAmount: 1000, Currency: "jpy", Interval: "month", IntervalCount: 1, Quantity: 2, TaxBehavior: "inclusive", TrialDays: 14}
+	want := planResponse{Name: "Pro", PriceID: "price_1", UnitAmount: 1000, Currency: "jpy", Interval: "month", IntervalCount: 1, Quantity: 2, TaxBehavior: "inclusive", TrialDays: 14}
 	if got != want {
 		t.Errorf("body = %+v, want %+v", got, want)
 	}
